@@ -106,3 +106,39 @@ unsolved_prop_df |>
 
 As illustrated in the plot, Tulsa has the lowest estimate and the widest confidence interval, while Chicago has the highest estimate and the most narrow confidence interval.
 
+# Problem 2
+```{r}
+import_data = function(url_path = "data/problem2_data/", name) {
+  
+  read_csv(str_c(url_path, name))
+  
+}
+
+participants_df =
+  tibble(names = list.files("data/problem2_data/")) |> # start with file names
+  mutate(dat = map(names, import_data, url_path = "data/problem2_data/")) |> # read in data
+  unnest(dat) |> 
+  mutate(names = str_remove(names, ".csv")) |> #delete suffix
+  separate(names, into = c("arm", "id"), sep = "_") |> 
+  pivot_longer(
+    week_1:week_8,
+    names_to = "week",
+    values_to = "observation",
+    names_prefix = "week_",
+    names_transform = list(week = as.numeric)
+  )
+
+participants_df |> 
+  ggplot(aes(x = week, y = observation, group = id, color = id)) +
+  geom_line() +
+  facet_grid(. ~ arm)
+```
+
+From the spaghetti plot, the observation values of the experimental arm increase over time, while those of the control arm fluctuates within a certain range.
+
+# Problem 3
+
+```{r}
+
+```
+
