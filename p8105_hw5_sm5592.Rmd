@@ -90,7 +90,9 @@ unsolved_prop_df =
   mutate(prop_estimate = map2(unsolved_num, homicide_num, prop_tidy)) |> 
   unnest(prop_estimate)
 
-unsolved_prop_df |> head()
+unsolved_prop_df |> 
+  head() |> 
+  knitr::kable(digits = 3)
 ```
 
 The `unsolved_prop_df` dataframe collects the proportion estimate and CI for each city.
@@ -148,29 +150,54 @@ t_test_tidy =
       broom::tidy() |> 
       select(estimate, p.value)
     
-    
   }
-
-n = 30
-sigma = 5
-mu = 0
 
 sim_results_df =
   expand_grid(
-    n = n,
-    mu = mu,
-    sigma = sigma,
+    mu = 0,
     iter = 1:5000
   ) |> 
-  mutate(test_result = map(n, t_test_tidy, mu = mu, sigma = sigma)) |> 
+  mutate(test_result = map(mu, t_test_tidy, n = 30, sigma = 5)) |> 
   unnest(test_result)
 
-sim_results_df |> head()
+sim_results_df |>
+  head() |> 
+  knitr::kable(digits = 3)
 ```
 
 For $\mu={1,2,3,4,5,6}$:
 ```{r}
+sim2_results_df = 
+  expand_grid(
+    mu = c(1:6),
+    iter = 1:5000
+  ) |> 
+  mutate(test_result = map(mu, t_test_tidy, n = 30, sigma = 5)) |> 
+  unnest(test_result)
 
+sim2_results_df |> 
+  group_by(mu) |> 
+  summarise(power = sum(p.value < 0.05) / n()) |> 
+  ggplot(aes(x = mu, y = power)) + 
+  geom_line()
 ```
 
+
+
+```{r}
+sim2_results_df |> 
+  group_by(mu) |> 
+  summarise(mean_estimate = mean(estimate)) |> 
+  ggplot(aes(x = mu, y = mean_estimate)) +
+  geom_line(aes(color = "black")) +
+  geom_line(data = 
+              sim2_results_df |>
+              filter(p.value < 0.05) |> 
+              group_by(mu) |> 
+              summarise(mean_estimate = mean(estimate)),
+            aes(color = "red")) +
+  scale_color_manual(name = "", 
+                     values = c("black" = "black", "red" = "red"), 
+                     labels = c('all','rejected'))
+```
 
