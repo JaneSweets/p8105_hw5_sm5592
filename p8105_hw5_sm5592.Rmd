@@ -138,7 +138,39 @@ From the spaghetti plot, the observation values of the experimental arm increase
 
 # Problem 3
 
+For $\mu=0$:
+```{r}
+t_test_tidy =
+  function(n, mu, sigma) {
+    
+      rnorm(n, mu, sigma) |> 
+      t.test() |> 
+      broom::tidy() |> 
+      select(estimate, p.value)
+    
+    
+  }
+
+n = 30
+sigma = 5
+mu = 0
+
+sim_results_df =
+  expand_grid(
+    n = n,
+    mu = mu,
+    sigma = sigma,
+    iter = 1:5000
+  ) |> 
+  mutate(test_result = map(n, t_test_tidy, mu = mu, sigma = sigma)) |> 
+  unnest(test_result)
+
+sim_results_df |> head()
+```
+
+For $\mu={1,2,3,4,5,6}$:
 ```{r}
 
 ```
+
 
