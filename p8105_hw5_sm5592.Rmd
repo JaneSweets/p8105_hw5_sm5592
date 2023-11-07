@@ -8,6 +8,7 @@ output: github_document
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(rvest)
+library(latex2exp)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -32,7 +33,7 @@ First, import the data.
 
 ```{r}
 homicide_df =
-  read_csv("data/homicide-data.csv")
+  read_csv("data/homicide-data.csv", show_col_types = FALSE)
 ```
 
 The data contains `r nrow(homicide_df)` observations and `r ncol(homicide_df)` variables related to the victim's biographical information and the location and disposition of the case.
@@ -51,6 +52,10 @@ homicide_city_df =
   summarise(
     homicide_num = n(), 
     unsolved_num = sum(disposition == "Closed without arrest" | disposition == "Open/No arrest"))
+
+homicide_city_df |> 
+  head() |> 
+  knitr::kable()
 ```
 
 Then, the total number of homicides is `r sum(homicide_city_df$homicide_num)`, and the total number of unsolved homicides is `r sum(homicide_city_df$unsolved_num)`.
@@ -100,10 +105,9 @@ The `unsolved_prop_df` dataframe collects the proportion estimate and CI for eac
 ```{r}
 unsolved_prop_df |> 
   mutate(city_state = fct_reorder(city_state, estimate)) |> 
-  ggplot(aes(x = city_state, y = estimate)) +
+  ggplot(aes(y = city_state, x = estimate)) +
   geom_point() +
-  geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) # rotate labels
+  geom_errorbar(aes(xmin = conf.low, xmax = conf.high))
 ```
 
 As illustrated in the plot, Tulsa has the lowest estimate and the widest confidence interval, while Chicago has the highest estimate and the most narrow confidence interval.
@@ -112,7 +116,7 @@ As illustrated in the plot, Tulsa has the lowest estimate and the widest confide
 ```{r}
 import_data = function(url_path = "data/problem2_data/", name) {
   
-  read_csv(str_c(url_path, name))
+  read_csv(str_c(url_path, name), show_col_types = F) # quiet the message
   
 }
 
@@ -133,7 +137,8 @@ participants_df =
 participants_df |> 
   ggplot(aes(x = week, y = observation, group = id, color = id)) +
   geom_line() +
-  facet_grid(. ~ arm)
+  facet_grid(. ~ arm) +
+  labs(title = "Observations in Different Arms Over Weeks")
 ```
 
 From the spaghetti plot, the observation values of the experimental arm increase over time, while those of the control arm fluctuates within a certain range.
@@ -179,25 +184,30 @@ sim2_results_df |>
   group_by(mu) |> 
   summarise(power = sum(p.value < 0.05) / n()) |> 
   ggplot(aes(x = mu, y = power)) + 
-  geom_line()
+  geom_point() +
+  geom_line() +
+  labs(title = TeX("Power for Different $\\mu$"), x = TeX("$\\mu$"))
 ```
 
-
+The power and effect size are positively correlated. With the increase of the effect size from one to six, the power increases from near 0.2 to near 1.
 
 ```{r}
 sim2_results_df |> 
   group_by(mu) |> 
   summarise(mean_estimate = mean(estimate)) |> 
   ggplot(aes(x = mu, y = mean_estimate)) +
-  geom_line(aes(color = "black")) +
+  geom_line(aes(color = "all", lty = "all")) +
   geom_line(data = 
               sim2_results_df |>
               filter(p.value < 0.05) |> 
               group_by(mu) |> 
               summarise(mean_estimate = mean(estimate)),
-            aes(color = "red")) +
-  scale_color_manual(name = "", 
-                     values = c("black" = "black", "red" = "red"), 
-                     labels = c('all','rejected'))
+            aes(color = "rejected", lty = "rejected")) +
+  scale_color_manual(name = "", values = c("all" = "grey", "rejected" = "red")) +
+  scale_linetype_manual(name = "", values = c("all" = 2, "rejected" = 1)) +
+  labs(title = TeX("Average Estimate for Different $\\mu$"), x = TeX("$\\mu$"), y = TeX("Average Estimate of $\\hat{\\mu}$"))
 ```
 
+When $\mu$ is small, the sample average of $\hat\mu$ across tests for which the null is rejected is larger than the true value, while in the case when $\mu$ is large ($=4,5,6$), the sample average of $\hat\mu$ for which the null is rejected is approximately equal to the true value.
+
+The average estimate follows the distribution: $\bar X\sim N(\mu, \frac{\sigma^2}{n}).$ If to reject $H_0: \mu=0$, the estimate has to be larger than $z_{1-\alpha}\frac{\sigma}{\sqrt n}=1.96*\frac{5}{\sqrt{30}}\approx 1.7527.$ Therefore, as $\sigma$ and $n$ are equal, there will be higher possibility to reject the null as $\mu$ increases. When more $\hat\mu s$ are rejected, the gap between the average estimate and the real value is greater. Therefore, the gap decreases as $\mu$ increases.
