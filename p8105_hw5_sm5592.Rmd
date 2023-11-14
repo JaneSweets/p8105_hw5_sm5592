@@ -44,7 +44,8 @@ Then, do some data cleaning and analysis.
 homicide_df = 
   homicide_df |> 
   janitor::clean_names() |> 
-  mutate(city_state = str_c(city, ", ", state))
+  mutate(city_state = str_c(city, ", ", state)) |> 
+  filter(city_state != "Tulsa, AL")
 
 homicide_city_df = 
   homicide_df |> 
@@ -111,7 +112,7 @@ unsolved_prop_df |>
   theme(text = element_text(size = 8))
 ```
 
-As illustrated in the plot, Tulsa has the lowest estimate and the widest confidence interval, while Chicago has the highest estimate and the most narrow confidence interval.
+As illustrated in the plot, Richmond has the lowest estimate, while Chicago has the highest estimate and the most narrow confidence interval.
 
 # Problem 2
 ```{r}
